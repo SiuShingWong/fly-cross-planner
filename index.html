@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fly Cross Planner</title>
+<link rel="icon" href="art/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/style.css">
+<script>
+  /* The three columns fill what is left under the header, and each scrolls on
+     its own. The header's height is measured rather than guessed. */
+  window.addEventListener('DOMContentLoaded', function () {
+    function measure() {
+      var bar = document.querySelector('.topbar');
+      if (!bar) return;
+      document.documentElement.style.setProperty('--topbar', bar.offsetHeight + 'px');
+    }
+    measure();
+    window.addEventListener('resize', measure);
+  });
+</script>
+</head>
+<body>
+
+<header class="topbar">
+  <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+    <g fill="none" stroke-width="3.4" stroke-linecap="round">
+      <path d="M11 7 C11 18 37 22 37 41" class="lg-a"/>
+      <path d="M37 7 C37 18 11 22 11 41" class="lg-b"/>
+    </g>
+    <ellipse cx="17.4" cy="25.6" rx="6.6" ry="3.2" class="lg-wing" transform="rotate(-26 17.4 25.6)"/>
+    <ellipse cx="30.6" cy="25.6" rx="6.6" ry="3.2" class="lg-wing" transform="rotate(26 30.6 25.6)"/>
+    <ellipse cx="24" cy="27.6" rx="4.2" ry="6.4" class="lg-body"/>
+    <ellipse cx="24" cy="20.4" rx="3.4" ry="3" class="lg-body"/>
+    <circle cx="21.7" cy="19.7" r="1.45" class="lg-eye"/>
+    <circle cx="26.3" cy="19.7" r="1.45" class="lg-eye"/>
+  </svg>
+  <h1>Fly Cross Planner</h1>
+  <p class="sub poem">
+    Ten days from egg to wing, and then<br>
+    a thousand of you, and again.<br>
+    Red eye, white eye, curl and stripe —<br>
+    a century of asking why,<br>
+    answered by something half a grain,<br>
+    that will not wait, and will explain.
+  </p>
+</header>
+
+<main class="layout">
+
+  <aside class="rack-pane">
+    <h2>Vials
+      <button id="btnClearAll" class="link-btn">clear all</button>
+      <button id="btnSaveBench" class="link-btn">save</button>
+      <label class="link-btn file-btn">open<input id="benchFile" type="file" accept=".json" hidden></label>
+    </h2>
+    <p id="benchNote" class="hint"></p>
+    <div id="rack" class="rack"></div>
+
+    <h2>Add a vial</h2>
+    <div id="starters" class="starters"></div>
+    <form id="newStock" class="new-stock">
+      <label for="stockGenotype">Or type a genotype</label>
+      <input id="stockGenotype" type="text" placeholder="w; vg/CyO; e" autocomplete="off">
+      <button type="submit">Add vial</button>
+      <div id="stockError" class="error"></div>
+      <p class="hint">Any genotype makes a vial of flies to work with; nothing is added to a stock list.
+      A slash separates the two homologues; semicolons separate chromosomes.
+      Each allele goes to its own chromosome, so <code>vg</code> alone lands on 2. Case matters:
+      <code>b</code> is black, <code>B</code> is Bar.<br>
+      Anything the library does not know is carried as an invisible marker on the chromosome you wrote it on.<br>
+      Balancers: FM7a, CyO, SM5, SM6a, TM3,Sb, TM3,Ser, TM6, TM6B, TM6C, TM2, MKRS.</p>
+    </form>
+
+    <h2>Alleles <span id="alleleCount" class="count"></span></h2>
+    <form id="newGene" class="new-gene">
+      <input id="geneSymbol" type="text" placeholder="a gene of yours, e.g. cnn[f04547]" autocomplete="off">
+      <select id="geneChr" aria-label="chromosome">
+        <option value="X">X</option>
+        <option value="2" selected>2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+      </select>
+      <input id="genePos" type="number" step="0.1" inputmode="decimal" placeholder="cM">
+      <label class="map-approx"><input type="checkbox" id="geneApprox"> estimate</label>
+      <button type="submit">Add</button>
+    </form>
+    <p id="geneAdded" class="hint"></p>
+    <label class="held"><input type="checkbox" id="alleleShowAll"> show every allele, not only the bench</label>
+    <div id="allelePanel" class="allele-panel"></div>
+    <p class="hint">Map positions come from you, not from the app: look the gene up on
+    <a href="https://flybase.org/" target="_blank" rel="noopener">FlyBase</a> and enter its genetic map
+    position. Mothers recombine, fathers do not, and a balancer suppresses the whole chromosome it is on.</p>
+
+    <h2>Fly list <span id="stockCount" class="count"></span></h2>
+    <div class="stock-box">
+      <div class="stock-source">
+        <label class="file-btn primary-ish">Load your own fly list&hellip;<input id="stockFile" type="file"
+          accept=".csv,.tsv,.txt,.json,.xlsx,.xls" hidden></label>
+        <span id="stockSource" class="dim"></span>
+        <span class="stock-source-more">
+          <button id="btnStockTemplate" class="link-btn">download a template</button>
+          <button id="btnSaveStocks" class="link-btn">save as my-stocks.js</button>
+          <button id="btnBuiltInStocks" class="link-btn">use the built-in list</button>
+        </span>
+      </div>
+      <input id="stockSearch" type="search" placeholder="Search genotype, number, project" autocomplete="off">
+      <label class="held"><input type="checkbox" id="heldOnly" checked> in stock only</label>
+      <div id="stockList" class="stock-list"></div>
+      <p id="stockNote" class="hint">Click a line to put that stock in a vial. The list that ships with the app
+      is the standard balancers and markers; load your own to search your lab's flies instead. Nothing is
+      uploaded &mdash; the file is read here in the browser.</p>
+
+      <details class="stock-format">
+        <summary>What the file should look like</summary>
+        <p class="hint">A <code>.csv</code> or <code>.tsv</code> with one stock per row and a header row.
+        Only <strong>Genotype</strong> is required; the rest are used if they are there, in any order, and any
+        other columns are ignored.</p>
+        <ul class="format-list">
+          <li><code>Genotype</code> &mdash; <strong>required</strong> &mdash; <code>w; cnn[f04547]/CyO</code></li>
+          <li><code>Stock #</code> &mdash; your number for it &mdash; <code>JR417</code></li>
+          <li><code>Description</code> &mdash; free text &mdash; <code>from Bloomington</code></li>
+          <li><code>Project</code> &mdash; free text, for searching &mdash; <code>centriole</code></li>
+          <li><code>In stock</code> &mdash; <code>yes</code>/<code>no</code>, <code>y</code>/<code>n</code>,
+            <code>1</code>/<code>0</code></li>
+        </ul>
+        <p class="hint">So a whole file can be four lines:</p>
+        <pre class="format-example">Stock #,Genotype,Description,In stock
+JR417,"w; cnn[f04547]/CyO",from Bloomington,yes
+JR418,"w; +; Sas-6/TM6B",,yes
+JR419,"w; Sco/CyO; Dr/TM6C",double balancer,no</pre>
+        <p class="hint">Commas inside a genotype are fine as long as the cell is quoted, which Excel does for
+        you. Headers are matched loosely, so <code>stock number</code>, <code>Held?</code> and
+        <code>notes</code> are all understood; a file with no header row still works if one column is clearly
+        the genotypes. With no in-stock column every row counts as held. An <code>.xlsx</code> cannot be read
+        here &mdash; in Excel use File &rarr; Save As &rarr; CSV, or run <code>data/build_stocks.py</code>.</p>
+      </details>
+    </div>
+
+    <h2>Balancer editors</h2>
+    <details class="bal-editor">
+      <summary>What each balancer carries</summary>
+      <div id="balList"></div>
+      <p class="hint">A balancer's markers are welded to it — the inversions stop any crossover product
+      being recovered, so they can never be separated by recombination. MKRS is the exception: it carries
+      no inversions, so it is listed here but does not suppress.<br>
+      Marker sets differ between labs. Changes apply to the flies already on the bench.
+      Anything you change here, and any of your own alleles you make visible, is remembered in this
+      browser — save the file to keep it beside the app.</p>
+      <button id="btnSaveLab">Save lab file</button>
+    </details>
+  </aside>
+
+  <section class="vial-pane">
+    <div class="pane-tabs">
+      <button id="tabBench" class="tab on">Bench</button>
+      <button id="tabGraph" class="tab">Plan graph</button>
+    </div>
+
+    <div id="graphBody" hidden>
+      <div class="graph-head">
+        <h2>The plan, drawn</h2>
+        <span class="hint">One row per generation, time down the page. An arrow is the flies you keep
+        going into the next cross.</span>
+      </div>
+      <div id="graphHost" class="graph-host"></div>
+    </div>
+
+    <div id="benchBody">
+    <div class="vial-head">
+      <div>
+        <h2 id="vialTitle">Vial</h2>
+        <div id="vialMeta" class="vial-meta"></div>
+        <div id="vialNotes" class="vial-notes"></div>
+      </div>
+      <div class="tools">
+        <button id="btnPad">Anaesthetise</button>
+        <label class="held">group
+          <select id="groupPad">
+            <option value="none" selected>not at all</option>
+            <option value="phenotype">by phenotype</option>
+            <option value="genotype">by genotype</option>
+          </select>
+        </label>
+        <button id="btnSelectLike">Select all like that one</button>
+        <button id="btnClearSel">Clear selection</button>
+        <button id="btnKeep">Keep selected in a new vial</button>
+        <button id="btnAgain">Collect another vial</button>
+        <button id="btnDiscard">Discard selected</button>
+        <button id="btnEmpty">Discard vial</button>
+      </div>
+    </div>
+
+    <canvas id="vialCanvas" class="vial-canvas"></canvas>
+
+    <div class="cross-row">
+      <button id="btnMother">&#9792; Use selected as mothers</button>
+      <button id="btnFather">&#9794; Use selected as fathers</button>
+      <label class="n-label">Offspring
+        <select id="sampleSize">
+          <option>50</option><option selected>100</option><option>200</option><option>500</option><option>1000</option>
+        </select>
+      </label>
+      <button id="btnCross" class="primary" disabled>Set up the cross</button>
+    </div>
+    <div id="crossBar" class="cross-bar"></div>
+    <div id="linkAhead" class="link-ahead"></div>
+    <p class="reminder">Mothers must be virgins. Collect females within eight hours of eclosion, or the vial is not yours.</p>
+
+    <div id="counts" class="counts-pane"></div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <div id="inspector" class="inspector"></div>
+
+    <section class="scheme-pane">
+      <h2>Crossing scheme <span id="schemeCount" class="count"></span></h2>
+      <div class="scheme-dates">
+        <label>First cross <input id="schemeStart" type="date"></label>
+        <label>At <select id="schemeTemp">
+          <option value="18">18 &deg;C</option>
+          <option value="22">22 &deg;C</option>
+          <option value="25" selected>25 &deg;C</option>
+          <option value="29">29 &deg;C</option>
+        </select></label>
+        <label>Generation <input id="schemeDays" type="number" min="7" max="60" step="1" value="14"> days</label>
+      </div>
+      <div id="schemeBody"></div>
+      <div class="scheme-tools">
+        <button id="btnSaveScheme">Save as a file</button>
+        <button id="btnCopyScheme" class="link-btn">copy</button>
+        <button id="btnPrintScheme" class="link-btn">print</button>
+      </div>
+    </section>
+  </aside>
+
+</main>
+
+<script src="data/library.js"></script>
+<script src="data/lab-overrides.js"></script>
+<script src="data/stocks.js"></script>
+<script src="data/my-stocks.js"></script>
+<script src="data/stock-source.js"></script>
+<script src="engine/genetics.js"></script>
+<script src="engine/phenotype.js"></script>
+<script src="engine/parse.js"></script>
+<script src="data/tools.js"></script>
+<script src="engine/scheme.js"></script>
+<script src="engine/bench.js"></script>
+<script src="ui/flyart.js"></script>
+<script src="ui/vial.js"></script>
+<script src="ui/graph.js"></script>
+<script src="ui/overrides.js"></script>
+<script src="ui/inspector.js"></script>
+<script src="ui/mapeditor.js"></script>
+<script src="ui/alleleprops.js"></script>
+<script src="ui/app.js"></script>
+<script>FCS.app.init();</script>
+</body>
+</html>

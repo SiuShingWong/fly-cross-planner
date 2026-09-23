@@ -1,0 +1,607 @@
+:root {
+  --ink: #1b1a17;
+  --ink-soft: #5d574d;
+  --line: #ddd6c9;
+  --paper: #faf7f1;
+  --card: #ffffff;
+  --accent: #2e7dbe;
+  --warn: #a8412a;
+  --radius: 8px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.topbar {
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+}
+.topbar h1 {
+  margin: 0;
+  font: 600 24px/1.2 Georgia, "Times New Roman", serif;
+  letter-spacing: -0.01em;
+}
+.topbar .sub { margin: 4px 0 0; color: var(--ink-soft); font-size: 13px; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 280px minmax(420px, 1fr) 320px;
+  gap: 18px;
+  padding: 18px 24px 24px;
+  align-items: start;
+}
+
+/* Each column scrolls on its own. Three panes that only move together means
+   reading the plan on the right while filling in an allele on the left is a
+   fight; this way each one stays where you put it. */
+@media (min-width: 900px) {
+  body { overflow: hidden; }
+  .layout { height: calc(100vh - var(--topbar, 96px)); }
+  .rack-pane, .vial-pane {
+    max-height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+  }
+  /* The right column holds two boxes that both matter. Rather than one long
+     scroll where the scheme falls off the bottom, each keeps its own room and
+     scrolls inside it. */
+  .side { max-height: 100%; min-height: 0; }
+  .side > .inspector { flex: 0 1 auto; min-height: 120px; max-height: 52%; overflow-y: auto; }
+  .side > .scheme-pane { flex: 1 1 auto; min-height: 180px; overflow-y: auto; }
+}
+
+h2 {
+  margin: 0 0 10px;
+  font: 600 12px/1 -apple-system, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+h4 {
+  margin: 18px 0 8px;
+  font: 600 12px/1 -apple-system, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+
+/* rack */
+.rack { display: flex; flex-direction: column; gap: 6px; margin-bottom: 24px; }
+.rack-item {
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 9px 11px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.rack-item:hover { border-color: #bdb3a1; }
+.rack-item.active { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.rack-name { font-weight: 600; font-size: 13px; }
+.rack-n { color: var(--ink-soft); font-size: 11px; margin-bottom: 3px; }
+.rack-line { color: var(--ink-soft); font-size: 11px; }
+
+.starters { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
+.chip {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+
+.new-stock label { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
+.new-stock input {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: 13px ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--card);
+  margin-bottom: 6px;
+}
+.new-stock button { width: 100%; }
+.hint { font-size: 11px; color: var(--ink-soft); margin: 8px 0 0; }
+.error { color: var(--warn); font-size: 12px; margin-top: 6px; }
+
+/* buttons */
+button {
+  font: 13px -apple-system, sans-serif;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--ink);
+}
+button:hover:not(:disabled) { border-color: #bdb3a1; }
+button:disabled { opacity: 0.45; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.on { background: #e3eef7; border-color: var(--accent); color: var(--accent); }
+
+/* vial */
+.vial-pane { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.vial-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  flex-wrap: wrap; gap: 8px 12px; margin-bottom: 10px;
+}
+.vial-head > div:first-child { flex: 1 1 220px; min-width: 0; }
+.vial-head h2 { overflow-wrap: anywhere; }
+.vial-meta { overflow-wrap: anywhere; }
+.vial-head h2 { margin: 0; font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--ink); font-weight: 600; }
+.vial-meta { font: 12px ui-monospace, Menlo, monospace; color: var(--ink-soft); margin-top: 3px; }
+.tools { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.vial-canvas {
+  display: block;
+  width: 100%;
+  height: 430px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fbfaf7;
+}
+
+.cross-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 12px 0 8px; }
+.n-label { font-size: 12px; color: var(--ink-soft); margin-left: auto; }
+.n-label select { font: 13px inherit; padding: 5px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); }
+
+.cross-bar { display: flex; align-items: stretch; gap: 10px; }
+.slot {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #fcfbf8;
+}
+.slot.empty { border-style: dashed; }
+.slot > span { display: block; font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em; }
+.slot strong { display: block; font: 13px ui-monospace, Menlo, monospace; margin-top: 2px; }
+.slot em { font-style: normal; font-size: 12px; color: var(--ink-soft); }
+.times { align-self: center; color: var(--ink-soft); }
+
+.reminder { font-size: 11px; color: var(--ink-soft); margin: 8px 0 0; font-style: italic; }
+
+/* counts */
+.counts-pane { margin-top: 16px; }
+table.counts { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.counts th {
+  text-align: left; font: 600 11px -apple-system, sans-serif;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft);
+  border-bottom: 1px solid var(--line); padding: 5px 6px;
+}
+table.counts td { padding: 5px 6px; border-bottom: 1px solid #f0ece4; }
+table.counts td.num, table.counts th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.counts td.dim { color: var(--ink-soft); }
+table.counts tr.missing td { color: #a09786; }
+.chi { margin-top: 8px; font-size: 12px; color: var(--ink-soft); }
+.lost { margin-top: 10px; font-size: 12px; color: var(--warn); background: #fdf3f0; border-radius: 6px; padding: 8px 10px; }
+.lost ul { margin: 6px 0 0; padding-left: 18px; }
+.lost li { font-family: ui-monospace, Menlo, monospace; font-size: 11px; }
+
+/* inspector */
+.inspector {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  min-height: 200px;
+}
+.inspector .empty { color: var(--ink-soft); font-size: 13px; }
+.insp-head { display: flex; gap: 10px; align-items: flex-start; }
+.insp-sex { font-size: 26px; line-height: 1; color: var(--accent); }
+.insp-pheno { font-weight: 600; }
+.insp-geno { font: 12px ui-monospace, Menlo, monospace; color: var(--ink-soft); margin-top: 2px; }
+.insp-portrait { text-align: center; margin: 10px 0; }
+table.traits { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+table.traits td { padding: 4px 6px; border-bottom: 1px solid #f0ece4; vertical-align: middle; }
+table.traits td.thumb { width: 40px; }
+table.traits td.thumb img { width: 36px; height: 36px; object-fit: contain; }
+table.traits tr.mutant td { font-weight: 600; }
+
+.allele { border-left: 2px solid var(--line); padding: 4px 0 4px 9px; margin-bottom: 9px; }
+.allele.hidden-allele { opacity: 0.6; }
+.allele-head { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.allele .sym { font: 600 13px ui-monospace, Menlo, monospace; }
+.allele .name { font-size: 13px; }
+.allele .tag {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em;
+  background: #f1ede5; border-radius: 3px; padding: 1px 5px; color: var(--ink-soft);
+}
+.allele-meta { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+.allele-note { font-size: 12px; color: var(--ink-soft); margin-top: 3px; }
+
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+/* vial rack rows with a discard control */
+.rack-row { position: relative; }
+.rack-row .rack-item { width: 100%; }
+.rack-del {
+  position: absolute; top: 5px; right: 5px;
+  width: 20px; height: 20px; padding: 0; line-height: 1;
+  border: none; background: transparent; color: #b5ab99;
+  font-size: 16px; border-radius: 4px;
+}
+.rack-row:hover .rack-del { color: var(--warn); background: #f6f1ea; }
+.link-btn {
+  border: none; background: none; padding: 0 0 0 6px;
+  font-size: 11px; text-transform: none; letter-spacing: 0;
+  color: var(--accent); cursor: pointer;
+}
+.link-btn:hover { text-decoration: underline; }
+.insp-portrait canvas { display: inline-block; }
+
+/* lab stock browser */
+.count { font-weight: 400; text-transform: none; letter-spacing: 0; color: #a49a88; }
+.stock-box { margin-bottom: 22px; }
+.stock-box input[type="search"] {
+  width: 100%; padding: 7px 9px; border: 1px solid var(--line);
+  border-radius: 6px; font: 13px inherit; background: var(--card);
+}
+.held { display: block; font-size: 11px; color: var(--ink-soft); margin: 5px 0 6px; }
+.held input { vertical-align: -1px; }
+.stock-list { max-height: 260px; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--card); }
+.stock-row {
+  display: block; width: 100%; text-align: left; border: none;
+  border-bottom: 1px solid #f2eee6; border-radius: 0; padding: 7px 9px; background: none;
+}
+.stock-row:last-child { border-bottom: none; }
+.stock-row:hover { background: #f7f3ec; }
+.stock-top { display: flex; justify-content: space-between; align-items: baseline; }
+.stock-no { font-weight: 600; font-size: 11px; }
+.stock-gone { font-size: 10px; color: #b5ab99; }
+.stock-geno { font: 11px ui-monospace, Menlo, monospace; color: var(--ink); margin-top: 1px; word-break: break-word; }
+.stock-desc { font-size: 10px; color: var(--ink-soft); margin-top: 2px; }
+
+.vial-notes { margin-top: 5px; }
+.vial-notes div {
+  font-size: 11px; color: var(--warn); background: #fdf3f0;
+  border-radius: 5px; padding: 5px 8px; margin-top: 4px;
+}
+.allele-note.dim { color: #a49a88; }
+
+/* lab corrections */
+.bal-editor { margin-bottom: 22px; }
+.bal-editor summary {
+  font-size: 12px; color: var(--accent); cursor: pointer; padding: 4px 0;
+}
+.bal-row {
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+  padding: 5px 0; border-bottom: 1px solid #f2eee6; font-size: 12px;
+}
+.bal-name { font-weight: 600; font-family: ui-monospace, Menlo, monospace; font-size: 11px; min-width: 56px; }
+.bal-chr { font-size: 10px; color: var(--ink-soft); }
+.bal-chips { display: flex; gap: 3px; flex-wrap: wrap; flex: 1; }
+.bal-chips em { color: #b5ab99; font-size: 11px; }
+.chip-marker {
+  display: inline-flex; align-items: center; gap: 2px;
+  background: #f1ede5; border-radius: 3px; padding: 1px 3px 1px 5px; font-size: 11px;
+}
+.chip-marker button {
+  border: none; background: none; padding: 0 2px; font-size: 13px;
+  line-height: 1; color: #a49a88; cursor: pointer;
+}
+.chip-marker button:hover { color: var(--warn); }
+.bal-row select { font-size: 11px; padding: 2px 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--card); }
+#btnSaveLab { width: 100%; margin-top: 8px; }
+
+.look-edit { display: flex; gap: 5px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+.look-edit label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); }
+.look-edit select { font-size: 11px; padding: 3px 5px; border: 1px solid var(--line); border-radius: 4px; background: var(--card); max-width: 150px; }
+
+/* pane tabs */
+.pane-tabs { display: flex; gap: 4px; margin: -4px 0 14px; border-bottom: 1px solid var(--line); }
+.tab {
+  border: none; background: none; border-radius: 0; padding: 6px 10px 8px;
+  font-size: 13px; color: var(--ink-soft); border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tab.on { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+
+/* planner */
+.plan-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.plan-form input {
+  flex: 1; min-width: 240px; padding: 8px 10px; border: 1px solid var(--line);
+  border-radius: 6px; font: 13px ui-monospace, Menlo, monospace; background: var(--card);
+}
+.plan-result-pane { margin-top: 16px; }
+.plan-ok { font-size: 13px; color: #2c6b3f; background: #eef6f0; border-radius: 6px; padding: 8px 10px; }
+.plan-no { font-size: 13px; color: var(--warn); background: #fdf3f0; border-radius: 6px; padding: 8px 10px; }
+.plan-starts { list-style: none; padding: 0; margin: 8px 0 0; }
+.plan-starts li { padding: 7px 0; border-bottom: 1px solid #f0ece4; font-size: 13px; }
+.plan-starts .mono, .plan-result.mono, .plan-cross .mono { font: 12px ui-monospace, Menlo, monospace; }
+.plan-starts .dim, .dim { color: var(--ink-soft); font-size: 11px; }
+.tag.ok { background: #e6f1e9; color: #2c6b3f; }
+.tag.warn { background: #fbeee9; color: var(--warn); }
+.plan-steps { list-style: none; padding: 0; margin: 8px 0 0; counter-reset: step; }
+.plan-step { border-left: 2px solid var(--line); padding: 4px 0 12px 12px; margin-bottom: 10px; }
+.plan-gen { font: 600 11px -apple-system, sans-serif; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+.plan-cross { margin: 3px 0; }
+.plan-cross .sex { color: var(--accent); }
+.plan-keep { font-size: 13px; margin: 4px 0; }
+.plan-result { color: var(--ink-soft); }
+.plan-warn { font-size: 12px; color: var(--warn); background: #fdf3f0; border-radius: 5px; padding: 6px 8px; margin-top: 5px; }
+.plan-warn ul { margin: 4px 0 0; padding-left: 16px; }
+#btnPlanToBench { margin-top: 10px; }
+
+/* finding the spelling your sheet uses */
+.allele-find { margin: 10px 0 4px; }
+.allele-find label { display: block; font-size: 11px; color: var(--ink-soft); margin-bottom: 4px; }
+.allele-find input {
+  width: 100%; max-width: 340px; padding: 6px 9px; border: 1px solid var(--line);
+  border-radius: 6px; font: 13px inherit; background: var(--card);
+}
+.allele-hits { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.allele-hits .chip, .spellings .chip { font: 11px ui-monospace, Menlo, monospace; }
+.plan-hint {
+  font-size: 12px; background: #f7f3ec; border-radius: 6px;
+  padding: 8px 10px; margin-top: 8px;
+}
+.spellings { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+
+/* building a genotype by slots */
+.slot-builder { margin: 10px 0 12px; }
+.chr-row { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+.chr-label {
+  width: 18px; text-align: center; font: 600 12px ui-monospace, Menlo, monospace;
+  color: var(--ink-soft);
+}
+.hslot {
+  flex: 1; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  min-height: 32px; padding: 4px 6px; border: 1px dashed var(--line);
+  border-radius: 6px; background: var(--card);
+}
+.hslot:hover { border-color: #bdb3a1; }
+.hslot span { text-transform: none; letter-spacing: 0; display: inline-flex; }
+.slash { color: var(--ink-soft); }
+.gchip {
+  display: inline-flex; align-items: center; gap: 2px; cursor: grab;
+  background: #eef2f6; border: 1px solid #d6dfe7; border-radius: 4px;
+  padding: 1px 3px 1px 6px; font: 12px ui-monospace, Menlo, monospace;
+}
+.gchip.bal { background: #f1ede5; border-color: #e0d7c6; }
+.gchip.wild { background: none; border: none; color: #b5ab99; cursor: default; padding-left: 2px; }
+.gchip button { border: none; background: none; padding: 0 2px; color: #a49a88; cursor: pointer; font-size: 12px; }
+.gchip button:hover { color: var(--warn); }
+.slot-add {
+  border: none; background: none; color: var(--accent); font-size: 11px;
+  padding: 1px 5px; line-height: 1.4; border-radius: 4px;
+}
+.slot-add:hover { background: #eef4f9; }
+.picker {
+  border: 1px solid var(--line); border-radius: 6px; background: #fcfbf8;
+  padding: 8px 10px; margin: 4px 0 8px;
+}
+.picker-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-bottom: 5px; }
+.picker-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); width: 72px; }
+.picker-find { flex: 1; min-width: 160px; padding: 4px 7px; border: 1px solid var(--line); border-radius: 5px; font: 12px inherit; }
+.picker-hits { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 6px; }
+.picker .chip, .picker-hits .chip { font: 11px ui-monospace, Menlo, monospace; }
+
+/* the two parents */
+.parents { display: flex; align-items: stretch; gap: 10px; margin: 12px 0 8px; }
+.parent { flex: 1; border: 1px solid var(--line); border-radius: 6px; padding: 9px 11px; background: var(--card); }
+.parent-role { font: 600 11px -apple-system, sans-serif; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent); }
+.parent-geno { margin: 4px 0 6px; font-size: 13px; }
+.have { font-size: 12px; }
+.parent-acts { margin-top: 7px; display: flex; gap: 10px; flex-wrap: wrap; }
+.parents .times { align-self: center; color: var(--ink-soft); }
+
+/* Which stock list is in use, and how to change it. */
+.stock-source {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-top: 6px; font-size: 11px; color: var(--ink-soft);
+}
+.file-btn { cursor: pointer; }
+.picker-hits .chip.own {
+  border-color: var(--accent); color: var(--accent); font-style: normal;
+}
+.picker-hits .chip.own .dim { margin-left: 4px; font-style: italic; }
+
+/* Map positions: the same row is used in the sidebar and beside a cross. */
+.map-panel { display: flex; flex-direction: column; gap: 2px; }
+.map-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 0; font-size: 12px;
+}
+.map-gene { font: 12px ui-monospace, Menlo, monospace; min-width: 84px; }
+.map-at { color: var(--ink-soft); font: 12px ui-monospace, Menlo, monospace; }
+.map-pos { width: 66px; padding: 2px 4px; font: 12px ui-monospace, Menlo, monospace; }
+.map-approx { color: var(--ink-soft); font-size: 11px; display: flex; align-items: center; gap: 3px; }
+.map-prompt {
+  margin: 6px 0; padding: 8px 10px;
+  border: 1px solid var(--rule); border-radius: 4px; background: var(--paper-2, transparent);
+}
+.map-prompt p { margin: 0 0 4px; }
+.link-ahead { margin: 6px 0; font-size: 12px; color: var(--ink-soft); }
+.link-ahead div { margin-bottom: 2px; }
+
+/* Adding a gene of your own, with its map position. */
+.new-gene { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 4px; }
+.new-gene input[type="text"] { flex: 1 1 140px; min-width: 120px; }
+.new-gene input[type="number"] { width: 66px; }
+
+/* Every genotype under its phenotype. */
+.geno-list { margin-top: 8px; }
+.geno-list summary { cursor: pointer; font-size: 12px; color: var(--ink-soft); }
+.geno-list table { margin-top: 6px; }
+.geno-list td.geno { font: 11px ui-monospace, Menlo, monospace; }
+.geno-list tr.geno-head td { border-top: 1px solid var(--rule); padding-top: 4px; font-weight: 600; }
+
+/* The crossing scheme, read off the bench. */
+.scheme { margin-top: 10px; }
+.scheme summary { cursor: pointer; font-size: 12px; color: var(--ink-soft); }
+.scheme-list { margin: 6px 0 4px; padding-left: 20px; font-size: 12px; }
+.scheme-list li { margin-bottom: 8px; }
+.scheme-head { font-weight: 600; }
+.scheme-side code { font: 11px ui-monospace, Menlo, monospace; }
+.scheme-keep { margin-top: 2px; }
+
+/* Right-hand column: the fly you clicked, then the scheme so far. */
+.side { display: flex; flex-direction: column; gap: 14px; }
+.scheme-pane {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 16px;
+}
+.scheme-pane h2 { margin-top: 0; }
+.scheme-tools { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.stock-source-more { display: flex; gap: 8px; flex-wrap: wrap; }
+.file-btn.primary-ish {
+  display: inline-block; padding: 4px 10px; border: 1px solid var(--line);
+  border-radius: 4px; background: #fff; font-size: 12px; cursor: pointer;
+}
+.file-btn.primary-ish:hover { border-color: var(--accent); color: var(--accent); }
+
+/* What a fly list file should look like. */
+.stock-format { margin-top: 6px; }
+.stock-format summary { cursor: pointer; font-size: 11px; color: var(--ink-soft); }
+.format-list { margin: 4px 0; padding-left: 16px; font-size: 11px; color: var(--ink-soft); }
+.format-list li { margin-bottom: 3px; }
+.format-list code { font-size: 10px; }
+.format-example {
+  font: 10px ui-monospace, Menlo, monospace; white-space: pre-wrap;
+  background: #f7f5f0; border: 1px solid var(--line); border-radius: 4px; padding: 6px; margin: 4px 0;
+}
+
+/* Where a marker sits on its chromosome. */
+.map-gene {
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font: 12px ui-monospace, Menlo, monospace; color: var(--ink); text-align: left;
+}
+.map-gene:hover { color: var(--accent); text-decoration: underline; }
+.map-bar-wrap { margin: 2px 0 8px; }
+.map-bar { width: 100%; height: auto; display: block; }
+.map-bar-tick { font: 7px -apple-system, sans-serif; fill: #a49a88; text-anchor: middle; }
+.map-bar-label { font: 9px ui-monospace, Menlo, monospace; fill: #a8412a; text-anchor: middle; }
+.map-bar-note { font-size: 11px; color: var(--ink-soft); }
+.map-bar-none { font-size: 11px; color: var(--ink-soft); margin-bottom: 6px; }
+
+/* What your own alleles do. */
+.props-panel { margin-top: 8px; }
+.props-panel summary { cursor: pointer; font-size: 12px; color: var(--ink-soft); }
+.allele-props {
+  border: 1px solid var(--line); border-radius: 4px;
+  padding: 6px 8px; margin: 6px 0; background: #fcfbf8;
+}
+.props-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.props-head .sym { font: 12px ui-monospace, Menlo, monospace; font-weight: 600; }
+.props-row {
+  display: flex; align-items: flex-start; flex-wrap: wrap;
+  gap: 4px 6px; margin-bottom: 5px; font-size: 11px;
+}
+.props-row > label { flex: 0 0 100%; color: var(--ink-soft); }
+.props-row select { font-size: 11px; max-width: 100%; }
+.props-map { flex: 1 1 100%; }
+.props-map .map-row { padding: 0; gap: 4px; flex-wrap: wrap; }
+.props-map .map-gene { min-width: 0; }
+.props-cis { display: flex; flex-wrap: wrap; gap: 4px; flex: 1 1 100%; }
+.props-cis .chip { flex: 0 0 auto; width: auto; font: 11px ui-monospace, Menlo, monospace; padding: 1px 6px; }
+.allele-props input, .allele-props button { width: auto; margin-bottom: 0; }
+.allele-props .map-pos { width: 70px; }
+.allele-props .props-row > label { margin-bottom: 0; }
+
+/* Dates on the scheme, and the merged allele panel. */
+.scheme-dates { display: flex; flex-wrap: wrap; gap: 8px; font-size: 11px; color: var(--ink-soft); margin-bottom: 8px; }
+.scheme-dates input[type="date"] { font-size: 11px; padding: 2px 4px; }
+.scheme-dates input[type="number"] { width: 52px; font-size: 11px; padding: 2px 4px; }
+.scheme-when { display: block; font-weight: 400; color: var(--ink-soft); font-size: 11px; }
+.allele-panel { display: flex; flex-direction: column; }
+.props-end { justify-content: flex-end; }
+.link-btn.danger { color: var(--warn); }
+
+/* The plan: every cross on the bench, dated. */
+.scheme-list li.scheme-here { border-left: 2px solid var(--accent); padding-left: 6px; margin-left: -8px; }
+.scheme-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; justify-content: space-between; }
+.scheme-when { display: flex; align-items: center; gap: 4px; font-weight: 400; font-size: 11px; }
+.scheme-when input[type="date"] { font-size: 11px; padding: 1px 3px; }
+
+/* The mark: two chromosomes crossing over, with a fly on them. */
+.topbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.topbar h1 { margin: 0; }
+.topbar .sub { flex: 1 1 100%; margin: 2px 0 0; }
+/* The poem sits beside the title on a wide screen, so the header stays one
+   band and the three columns keep their height. */
+@media (min-width: 900px) {
+  .topbar .poem { flex: 0 1 auto; margin-left: auto; text-align: right; }
+}
+.logo { width: 40px; height: 40px; flex: 0 0 auto; }
+.logo .lg-a { stroke: var(--accent); }
+.logo .lg-b { stroke: #c98a3a; }
+.logo .lg-body { fill: #6b4423; }
+.logo .lg-eye { fill: #c0392b; }
+.logo .lg-wing { fill: #cfe4f2; fill-opacity: 0.75; }
+
+/* The plan, drawn. */
+.graph-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.graph-head h2 { margin: 0; }
+.graph-host { overflow: auto; padding-bottom: 8px; }
+.plan-graph { max-width: none; }
+.plan-graph .g-node rect { fill: #fff; stroke: var(--line); }
+.plan-graph .g-node.g-on rect { stroke: #9ec5e2; stroke-width: 1.6; }
+.plan-graph .g-node.g-here rect { stroke: var(--accent); stroke-width: 2.2; }
+.plan-graph .g-node { cursor: pointer; }
+.plan-graph .g-title { font: 600 12px -apple-system, sans-serif; fill: var(--ink); }
+.plan-graph .g-date { font: 10px -apple-system, sans-serif; fill: var(--ink-soft); }
+.plan-graph .g-geno { font: 11px ui-monospace, Menlo, monospace; fill: var(--ink-soft); }
+.plan-graph .g-own { fill: var(--ink); font-weight: 600; }
+.plan-graph .g-std { fill: #a49a88; }
+.plan-graph .g-kept { font: 10px -apple-system, sans-serif; fill: var(--accent); }
+.plan-graph .g-edge { fill: none; stroke: #b9b1a3; stroke-width: 1.5; }
+.plan-graph .g-edge-label {
+  font: 10px -apple-system, sans-serif; fill: var(--ink-soft);
+  paint-order: stroke; stroke: #fbfaf7; stroke-width: 3px; stroke-linejoin: round;
+}
+.plan-graph marker path { fill: #b9b1a3; }
+
+/* Which generation a vial holds. */
+.gen-chip {
+  display: inline-block; margin-right: 6px; padding: 0 6px;
+  border-radius: 9px; font: 600 10px -apple-system, sans-serif;
+  vertical-align: 1px; letter-spacing: 0.02em;
+  background: #ece7dd; color: #6b6255;
+}
+.gen-chip.gen-F1 { background: #dceaf6; color: #23608f; }
+.gen-chip.gen-F2 { background: #cfe0f0; color: #1d5480; }
+.gen-chip.gen-F3 { background: #c2d6ea; color: #174870; }
+.gen-chip.gen-F4 { background: #b4cbe4; color: #123c60; }
+.gen-chip.gen-F5, .gen-chip.gen-F6, .gen-chip.gen-F7 { background: #a6c1de; color: #0e3150; }
+#vialTitle .gen-chip { vertical-align: 2px; }
+
+/* Nothing in the right column may stick out of its box: a genotype has no
+   spaces to break at, so it is allowed to break anywhere. */
+.side, .side .insp-geno, .side .allele, .side .scheme-side, .side .scheme-head { min-width: 0; }
+.side .insp-geno, .side .allele-meta, .side .allele-note, .side .scheme-side code,
+.side .scheme-keep, .side .scheme-note, .side .insp-pheno { overflow-wrap: anywhere; }
+.side img, .side canvas, .side svg { max-width: 100%; }
+.side .insp-portrait img { height: auto; }
+
+/* The poem under the title. It is a header, not a paragraph of text: small,
+   quiet, and out of the way of the work. */
+.poem {
+  font-size: 12px; line-height: 1.45; color: var(--ink-soft);
+  font-style: italic; margin: 4px 0 0;
+}
+
+/* A genotype reads as what you are following, over what is holding it steady.
+   The gene you told the app about is in ordinary ink; the balancers and the
+   classical markers you already know by sight (TM6C, MKRS, Gla, Pr, Dr) are
+   there but quiet. Inline, so a genotype stays on one line inside the
+   uppercase-label boxes of the cross bar. */
+.geno-own, .geno-std, .geno-slash, .geno-sep { display: inline; text-transform: none; letter-spacing: 0; }
+.geno-own { color: var(--ink); }
+.geno-std { color: #a49a88; }
+.geno-slash, .geno-sep { color: var(--ink-soft); }
+.insp-geno .geno-own, .slot .geno-own { font-weight: 600; }
