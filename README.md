@@ -614,4 +614,6 @@ right by the marker rather than the balancer.
   these from the console; the settled numbers live at the top of
   `ui/flyart.js`, and the same ones are repeated in `whole_fly()` in
   `art/build_art.py` for the trait pictures.
-# fly-cross-planner
+
+## Image Attribution
+The Drosophila (fruit fly) image used in this project was obtained from FlyLab JS – ScienceCourseware. All rights to the original image belong to its respective owner(s).
